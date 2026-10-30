@@ -1,7 +1,12 @@
+import Sidebar from './components/Sidebar'
+
 export default function App() {
   return (
-    <h1 className="text-3xl font-bold text-blue-500 p-8">
-      Mini OneDrive
-    </h1>
+    <div className="flex h-screen">
+      <Sidebar />
+      <main className="flex-1 p-6">
+        <h1 className="text-2xl font-semibold">Mis archivos</h1>
+      </main>
+    </div>
   )
 }
