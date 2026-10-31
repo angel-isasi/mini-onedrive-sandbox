@@ -1,12 +1,34 @@
-import { useQuery } from '@tanstack/react-query'
-import { getFiles } from '../api/files'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getFiles, getDownloadUrl, deleteFile } from '../api/files'
 import { formatSize, formatDate } from '../utils/format'
 
 export default function FileList({ folderId = 'root' }) {
+  const queryClient = useQueryClient()
+
   const { data: files = [], isPending, isError, error } = useQuery({
     queryKey: ['files', folderId],
     queryFn: () => getFiles(folderId),
   })
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteFile,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['files'] }),
+    onError: (err) => alert(err.message),
+  })
+
+  async function handleDownload(id) {
+    try {
+      const url = await getDownloadUrl(id)
+      window.location.href = url // S3 responde como "attachment", así que descarga sin salir de la página
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  function handleDelete(file) {
+    if (!confirm(`¿Eliminar "${file.name}"?`)) return
+    deleteMutation.mutate(file.id)
+  }
 
   if (isPending) {
     return <p className="mt-6 text-sm text-gray-500">Cargando archivos...</p>
@@ -27,16 +49,32 @@ export default function FileList({ folderId = 'root' }) {
           <th className="py-2 font-medium">Nombre</th>
           <th className="py-2 font-medium">Modificado</th>
           <th className="py-2 font-medium">Tamaño</th>
+          <th className="py-2 font-medium text-right">Acciones</th>
         </tr>
       </thead>
       <tbody>
         {files.map((file) => (
-          <tr key={file.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+          <tr key={file.id} className="border-b border-gray-100 hover:bg-gray-50">
             <td className="py-3">
               {file.type === 'folder' ? '📁' : '📄'} {file.name}
             </td>
             <td className="py-3 text-gray-600">{formatDate(file.updatedAt)}</td>
             <td className="py-3 text-gray-600">{formatSize(file.size)}</td>
+            <td className="py-3 text-right space-x-3">
+              <button
+                onClick={() => handleDownload(file.id)}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                Descargar
+              </button>
+              <button
+                onClick={() => handleDelete(file)}
+                disabled={deleteMutation.isPending}
+                className="text-sm text-red-600 hover:underline disabled:opacity-50"
+              >
+                Eliminar
+              </button>
+            </td>
           </tr>
         ))}
       </tbody>

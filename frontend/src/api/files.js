@@ -49,3 +49,19 @@ export async function getFiles(folderId = "root") {
   if (!res.ok) throw new Error(`Error ${res.status} al cargar archivos`);
   return res.json();
 }
+
+export async function getDownloadUrl(id) {
+  const res = await fetch(
+    `${import.meta.env.VITE_API_URL}/files/${id}/download`,
+  );
+  if (!res.ok) throw new Error(`Error ${res.status} al descargar`);
+  const { downloadUrl } = await res.json();
+  return downloadUrl;
+}
+
+export async function deleteFile(id) {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/files/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(`Error ${res.status} al eliminar`);
+}
