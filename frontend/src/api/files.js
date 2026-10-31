@@ -65,3 +65,21 @@ export async function deleteFile(id) {
   });
   if (!res.ok) throw new Error(`Error ${res.status} al eliminar`);
 }
+
+export async function createFolder(name, parentId = "root") {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/folders`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, parentId }),
+  });
+  if (!res.ok) throw new Error(`Error ${res.status} al crear carpeta`);
+  return res.json(); // { id }
+}
+
+export async function getFolderPath(folderId) {
+  const res = await fetch(
+    `${import.meta.env.VITE_API_URL}/folders/${folderId}/path`,
+  );
+  if (!res.ok) throw new Error(`Error ${res.status} al cargar la ruta`);
+  return res.json(); // [{ id, name }, ...]
+}

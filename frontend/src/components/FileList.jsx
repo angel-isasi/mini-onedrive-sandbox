@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { getFiles, getDownloadUrl, deleteFile } from '../api/files'
 import { formatSize, formatDate } from '../utils/format'
 
@@ -19,7 +20,7 @@ export default function FileList({ folderId = 'root' }) {
   async function handleDownload(id) {
     try {
       const url = await getDownloadUrl(id)
-      window.location.href = url // S3 responde como "attachment", así que descarga sin salir de la página
+      window.location.assign(url)
     } catch (err) {
       alert(err.message)
     }
@@ -53,30 +54,48 @@ export default function FileList({ folderId = 'root' }) {
         </tr>
       </thead>
       <tbody>
-        {files.map((file) => (
-          <tr key={file.id} className="border-b border-gray-100 hover:bg-gray-50">
-            <td className="py-3">
-              {file.type === 'folder' ? '📁' : '📄'} {file.name}
-            </td>
-            <td className="py-3 text-gray-600">{formatDate(file.updatedAt)}</td>
-            <td className="py-3 text-gray-600">{formatSize(file.size)}</td>
-            <td className="py-3 text-right space-x-3">
-              <button
-                onClick={() => handleDownload(file.id)}
-                className="text-sm text-blue-600 hover:underline"
-              >
-                Descargar
-              </button>
-              <button
-                onClick={() => handleDelete(file)}
-                disabled={deleteMutation.isPending}
-                className="text-sm text-red-600 hover:underline disabled:opacity-50"
-              >
-                Eliminar
-              </button>
-            </td>
-          </tr>
-        ))}
+        {files.map((file) => {
+          const isFolder = file.type === 'folder'
+
+          return (
+            <tr key={file.id} className="border-b border-gray-100 hover:bg-gray-50">
+              <td className="py-3">
+                {isFolder ? (
+                  <Link
+                    to="/folders/$folderId"
+                    params={{ folderId: file.id }}
+                    className="hover:underline"
+                  >
+                    📁 {file.name}
+                  </Link>
+                ) : (
+                  <span>📄 {file.name}</span>
+                )}
+              </td>
+              <td className="py-3 text-gray-600">{formatDate(file.updatedAt)}</td>
+              <td className="py-3 text-gray-600">
+                {isFolder ? '—' : formatSize(file.size)}
+              </td>
+              <td className="py-3 text-right space-x-3">
+                {!isFolder && (
+                  <button
+                    onClick={() => handleDownload(file.id)}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Descargar
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(file)}
+                  disabled={deleteMutation.isPending}
+                  className="text-sm text-red-600 hover:underline disabled:opacity-50"
+                >
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          )
+        })}
       </tbody>
     </table>
   )
