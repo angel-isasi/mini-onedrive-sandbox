@@ -41,3 +41,11 @@ export function uploadToS3(uploadUrl, file, onProgress) {
     xhr.send(file);
   });
 }
+
+export async function getFiles(folderId = "root") {
+  const res = await fetch(
+    `${import.meta.env.VITE_API_URL}/files?folderId=${encodeURIComponent(folderId)}`,
+  );
+  if (!res.ok) throw new Error(`Error ${res.status} al cargar archivos`);
+  return res.json();
+}
