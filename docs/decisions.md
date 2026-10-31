@@ -6,7 +6,7 @@ Practice repo for learning. Not the official project.
 
 - Monorepo: frontend/, backend/, infra/, docs/
 - Frontend: React + Vite (JavaScript), TanStack Router, TanStack Query, Tailwind
-- Backend: Node.js 22 Lambdas (JS, ES modules), one Lambda per endpoint
+- Backend: Node.js 24 Lambdas (JS, ES modules), one Lambda per endpoint
 - API: API Gateway HTTP API
 - Region: us-east-1
 
