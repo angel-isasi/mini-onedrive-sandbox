@@ -1,6 +1,25 @@
+import { useQuery } from '@tanstack/react-query'
+import { getFiles } from '../api/files'
 import { formatSize, formatDate } from '../utils/format'
 
-export default function FileList({ files }) {
+export default function FileList({ folderId = 'root' }) {
+  const { data: files = [], isPending, isError, error } = useQuery({
+    queryKey: ['files', folderId],
+    queryFn: () => getFiles(folderId),
+  })
+
+  if (isPending) {
+    return <p className="mt-6 text-sm text-gray-500">Cargando archivos...</p>
+  }
+
+  if (isError) {
+    return <p className="mt-6 text-sm text-red-600">{error.message}</p>
+  }
+
+  if (files.length === 0) {
+    return <p className="mt-6 text-sm text-gray-500">Esta carpeta está vacía.</p>
+  }
+
   return (
     <table className="w-full mt-6 text-left">
       <thead className="text-sm text-gray-500 border-b border-gray-200">

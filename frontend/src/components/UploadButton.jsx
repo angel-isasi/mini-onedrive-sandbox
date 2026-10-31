@@ -1,7 +1,9 @@
 import { useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { getUploadUrl, uploadToS3 } from "../api/files";
 
 export default function UploadButton() {
+  const queryClient = useQueryClient();
   const inputRef = useRef(null);
   const [progress, setProgress] = useState(null); // null = no hay subida
   const [error, setError] = useState(null);
@@ -16,6 +18,7 @@ export default function UploadButton() {
       const { uploadUrl } = await getUploadUrl(file);
       await uploadToS3(uploadUrl, file, setProgress);
       setProgress(100);
+      queryClient.invalidateQueries({ queryKey: ["files"] }); // refresca la lista
     } catch (err) {
       setError(err.message);
       setProgress(null);
@@ -37,7 +40,10 @@ export default function UploadButton() {
 
       {progress !== null && (
         <div className="h-2 w-full rounded bg-gray-200">
-          <div className="h-2 rounded bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
+          <div
+            className="h-2 rounded bg-blue-600 transition-all"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       )}
       {progress === 100 && <p className="text-sm text-green-600">Subido ✓</p>}
