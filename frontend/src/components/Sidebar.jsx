@@ -1,11 +1,11 @@
+import UploadButton from "./UploadButton";
+
 const links = ['Mis archivos', 'Recientes', 'Compartidos', 'Papelera']
 
 export default function Sidebar() {
   return (
     <aside className="w-60 border-r border-gray-200 p-4 flex flex-col gap-4">
-      <button className="bg-blue-600 text-white rounded-lg py-2 font-medium hover:bg-blue-700">
-        + Nuevo
-      </button>
+      <UploadButton />
 
       <nav className="flex flex-col gap-1">
         {links.map((link) => (
