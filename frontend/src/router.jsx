@@ -1,20 +1,46 @@
-import { createRouter, createRootRoute, createRoute } from '@tanstack/react-router'
+import {
+  createRouter,
+  createRootRoute,
+  createRoute,
+  redirect,
+  Outlet,
+} from '@tanstack/react-router'
 import App from './App'
 import FolderPage from './pages/FolderPage'
+import LoginPage from './pages/LoginPage'
+import { getSession } from './auth/cognito'
 
-// Ruta raíz: el layout (Sidebar + contenido)
-const rootRoute = createRootRoute({ component: App })
+// Raíz: no pinta nada propio, solo la ruta hija
+const rootRoute = createRootRoute({ component: Outlet })
 
-// "/" -> carpeta root
-const indexRoute = createRoute({
+// "/login" -> sin Sidebar. Si ya hay sesión, manda a "/"
+const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
+  path: '/login',
+  beforeLoad: () => {
+    if (getSession()) throw redirect({ to: '/' })
+  },
+  component: LoginPage,
+})
+
+// Layout protegido (Sidebar + contenido). Sin sesión -> "/login"
+const appRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: 'app', // ruta sin path propio, solo agrupa
+  beforeLoad: () => {
+    if (!getSession()) throw redirect({ to: '/login' })
+  },
+  component: App,
+})
+
+const indexRoute = createRoute({
+  getParentRoute: () => appRoute,
   path: '/',
   component: () => <FolderPage folderId="root" />,
 })
 
-// "/folders/abc-123" -> carpeta con ese id
 const folderRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appRoute,
   path: '/folders/$folderId',
   component: function FolderRouteComponent() {
     const { folderId } = folderRoute.useParams()
@@ -22,6 +48,9 @@ const folderRoute = createRoute({
   },
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, folderRoute])
+const routeTree = rootRoute.addChildren([
+  loginRoute,
+  appRoute.addChildren([indexRoute, folderRoute]),
+])
 
 export const router = createRouter({ routeTree })

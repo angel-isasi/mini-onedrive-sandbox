@@ -4,10 +4,13 @@ import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 const db = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 const TABLE_NAME = process.env.TABLE_NAME;
-const USER_ID = "test-user"; // se cambia en módulo 8 (Cognito)
 const MAX_DEPTH = 20; // evita bucles infinitos si hay datos corruptos
 
 export const handler = async (event) => {
+  // userId real: el "sub" del token, ya verificado por API Gateway (JWT authorizer)
+  const USER_ID = event.requestContext?.authorizer?.jwt?.claims?.sub;
+  if (!USER_ID) return response(401, { message: "No autorizado" });
+
   let currentId = event.pathParameters?.id;
   if (!currentId) return response(400, { message: "Falta el id" });
 

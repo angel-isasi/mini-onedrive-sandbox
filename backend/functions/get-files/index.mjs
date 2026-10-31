@@ -4,9 +4,12 @@ import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 const db = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 const TABLE_NAME = process.env.TABLE_NAME;
-const USER_ID = "test-user"; // se cambia en módulo 8 (Cognito)
 
 export const handler = async (event) => {
+  // userId real: el "sub" del token, ya verificado por API Gateway (JWT authorizer)
+  const USER_ID = event.requestContext?.authorizer?.jwt?.claims?.sub;
+  if (!USER_ID) return response(401, { message: "No autorizado" });
+
   const folderId = event.queryStringParameters?.folderId || "root";
 
   // Query al GSI: solo lee los items de esta carpeta

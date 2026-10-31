@@ -29,3 +29,7 @@ Practice repo for learning. Not the official project.
 - Frontend routing with TanStack Router (code-based): "/" = root, "/folders/$folderId"
 - Breadcrumb via GET /folders/{id}/path (walks up parentId, max 20 levels)
 - Pending: deleting a folder does not delete its contents (orphan items); solve with trash (module 10)
+
+- Auth: custom login page with USER_PASSWORD_AUTH via fetch (no hosted UI, no Amplify); session in localStorage
+- API Gateway JWT authorizer with ID token (audience = app client ID); Lambdas read userId from claims.sub
+- Pending: automatic token refresh (today the user is sent back to /login after 60 min)
