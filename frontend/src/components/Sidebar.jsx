@@ -1,15 +1,28 @@
-import UploadButton from "./UploadButton";
+import { Link } from '@tanstack/react-router'
+import UploadButton from './UploadButton'
+import NewFolderButton from './NewFolderButton'
 
-const links = ['Mis archivos', 'Recientes', 'Compartidos', 'Papelera']
+const links = ['Recientes', 'Compartidos', 'Papelera'] // se implementan en módulo 10
 
 export default function Sidebar() {
   return (
     <aside className="w-60 border-r border-gray-200 p-4 flex flex-col gap-4">
-      <UploadButton />
+      <div className="flex flex-col gap-2">
+        <UploadButton />
+        <NewFolderButton />
+      </div>
 
       <nav className="flex flex-col gap-1">
+        <Link
+          to="/"
+          className="px-3 py-2 rounded-md hover:bg-gray-100"
+          activeProps={{ className: 'bg-gray-100 font-medium' }}
+          activeOptions={{ exact: true }}
+        >
+          Mis archivos
+        </Link>
         {links.map((link) => (
-          <a key={link} href="#" className="px-3 py-2 rounded-md hover:bg-gray-100">
+          <a key={link} href="#" className="px-3 py-2 rounded-md text-gray-400 cursor-not-allowed">
             {link}
           </a>
         ))}
