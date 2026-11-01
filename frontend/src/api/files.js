@@ -129,3 +129,9 @@ export async function updateItem(id, changes) {
   }
   return res.json();
 }
+
+export async function getRecent() {
+  const res = await apiFetch("/recent");
+  if (!res.ok) throw new Error(`Error ${res.status} al cargar recientes`);
+  return res.json();
+}
