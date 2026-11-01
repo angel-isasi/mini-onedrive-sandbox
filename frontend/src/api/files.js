@@ -117,3 +117,15 @@ export async function purgeItem(id) {
   const res = await apiFetch(`/trash/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error(`Error ${res.status} al borrar definitivamente`);
 }
+
+export async function updateItem(id, changes) {
+  const res = await apiFetch(`/files/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(changes),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Error ${res.status} al actualizar`);
+  }
+  return res.json();
+}
