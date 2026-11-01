@@ -5,6 +5,7 @@ import NewFolderButton from './NewFolderButton'
 import { getCurrentUser, signOut } from '../auth/cognito'
 import SearchBox from './SearchBox'
 import StorageBar from './StorageBar'
+import InviteButton from './InviteButton'
 
 const links = ['Compartidos'] // Fase 2 (según wireframes oficiales)
 
@@ -57,9 +58,10 @@ export default function Sidebar({ onNavigate }) {
       <div className="mt-auto flex flex-col gap-3 text-sm text-gray-600">
                 <StorageBar />
 
-        <div className="border-t border-gray-200 pt-3">
-          <p className="truncate" title={user?.email}>{user?.email}</p>
-          <button onClick={handleSignOut} className="mt-1 text-red-600 hover:underline">
+                <div className="border-t border-gray-200 pt-3 flex flex-col items-start gap-1">
+          <p className="truncate w-full" title={user?.email}>{user?.email}</p>
+          <InviteButton />
+          <button onClick={handleSignOut} className="text-red-600 hover:underline">
             Cerrar sesión
           </button>
         </div>

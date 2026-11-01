@@ -248,3 +248,16 @@ export async function uploadFile(file, folderId = "root", onProgress) {
   const { uploadUrl } = await getUploadUrl(file, folderId);
   await uploadToS3(uploadUrl, file, onProgress);
 }
+
+// ---------- Invitaciones ----------
+export async function inviteUser(email) {
+  const res = await apiFetch("/users/invite", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Error ${res.status} al invitar`);
+  }
+  return res.json();
+}
