@@ -100,3 +100,20 @@ export async function getFolderPath(folderId) {
   if (!res.ok) throw new Error(`Error ${res.status} al cargar la ruta`);
   return res.json();
 }
+
+export async function getTrash() {
+  const res = await apiFetch("/trash");
+  if (!res.ok) throw new Error(`Error ${res.status} al cargar la papelera`);
+  return res.json();
+}
+
+export async function restoreItem(id) {
+  const res = await apiFetch(`/files/${id}/restore`, { method: "POST" });
+  if (!res.ok) throw new Error(`Error ${res.status} al restaurar`);
+  return res.json();
+}
+
+export async function purgeItem(id) {
+  const res = await apiFetch(`/trash/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`Error ${res.status} al borrar definitivamente`);
+}
