@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "vite build && aws s3 sync dist/ s3://sandbox-web-angel-2026 --delete && aws cloudfront create-invalidation --distribution-id E2YTCBPYE3I6HB --paths \"/*\""
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
