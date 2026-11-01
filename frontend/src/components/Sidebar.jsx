@@ -4,6 +4,7 @@ import UploadButton from './UploadButton'
 import NewFolderButton from './NewFolderButton'
 import { getCurrentUser, signOut } from '../auth/cognito'
 import SearchBox from './SearchBox'
+import StorageBar from './StorageBar'
 
 const links = ['Compartidos'] // Fase 2 (según wireframes oficiales)
 
@@ -54,12 +55,7 @@ export default function Sidebar({ onNavigate }) {
       </nav>
 
       <div className="mt-auto flex flex-col gap-3 text-sm text-gray-600">
-        <div>
-          <div className="h-2 bg-gray-200 rounded-full">
-            <div className="h-2 bg-blue-600 rounded-full w-1/4" />
-          </div>
-          <p className="mt-2">250 MB de 1 GB usados</p>
-        </div>
+                <StorageBar />
 
         <div className="border-t border-gray-200 pt-3">
           <p className="truncate" title={user?.email}>{user?.email}</p>

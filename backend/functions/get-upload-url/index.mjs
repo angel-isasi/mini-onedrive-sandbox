@@ -1,7 +1,11 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  PutCommand,
+  QueryCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "node:crypto";
 
 const s3 = new S3Client({});
@@ -9,7 +13,30 @@ const db = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 const BUCKET = process.env.BUCKET_NAME;
 const TABLE = process.env.TABLE_NAME;
-const MAX_SIZE = 100 * 1024 * 1024; // 100 MB
+const MAX_SIZE = 100 * 1024 * 1024; // 100 MB por archivo
+const QUOTA = 1024 * 1024 * 1024; // 1 GB por usuario (igual que get-usage)
+
+// Suma el tamaño de todos los archivos del usuario (incluye papelera)
+async function getUsedBytes(userId) {
+  let used = 0;
+  let lastKey;
+  do {
+    const res = await db.send(
+      new QueryCommand({
+        TableName: TABLE,
+        KeyConditionExpression: "userId = :u",
+        FilterExpression: "#t = :file",
+        ExpressionAttributeNames: { "#t": "type", "#s": "size" },
+        ExpressionAttributeValues: { ":u": userId, ":file": "file" },
+        ProjectionExpression: "#s",
+        ExclusiveStartKey: lastKey,
+      }),
+    );
+    for (const item of res.Items) used += item.size || 0;
+    lastKey = res.LastEvaluatedKey;
+  } while (lastKey);
+  return used;
+}
 
 export const handler = async (event) => {
   // userId real: el "sub" del token, ya verificado por API Gateway (JWT authorizer)
@@ -30,6 +57,15 @@ export const handler = async (event) => {
   }
   if (size > MAX_SIZE) {
     return response(400, { message: "Máximo 100 MB por archivo" });
+  }
+
+  // 0. Verificar cuota antes de crear nada
+  const used = await getUsedBytes(USER_ID);
+  if (used + size > QUOTA) {
+    return response(413, {
+      message:
+        "No tienes espacio suficiente. Vacía la papelera o borra archivos.",
+    });
   }
 
   const fileId = randomUUID();
