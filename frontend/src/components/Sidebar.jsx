@@ -4,7 +4,7 @@ import UploadButton from './UploadButton'
 import NewFolderButton from './NewFolderButton'
 import { getCurrentUser, signOut } from '../auth/cognito'
 
-const links = ['Recientes', 'Compartidos', 'Papelera'] // se implementan en módulo 10
+const links = ['Recientes', 'Compartidos'] // pendientes del módulo 10
 
 export default function Sidebar() {
   const navigate = useNavigate()
@@ -38,6 +38,13 @@ export default function Sidebar() {
             {link}
           </a>
         ))}
+        <Link
+          to="/trash"
+          className="px-3 py-2 rounded-md hover:bg-gray-100"
+          activeProps={{ className: 'bg-gray-100 font-medium' }}
+        >
+          Papelera
+        </Link>
       </nav>
 
       <div className="mt-auto flex flex-col gap-3 text-sm text-gray-600">
