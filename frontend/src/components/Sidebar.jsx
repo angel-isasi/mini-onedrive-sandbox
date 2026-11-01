@@ -9,7 +9,8 @@ const links = ['Compartidos'] // Fase 2 (según wireframes oficiales)
 const linkClass = 'px-3 py-2 rounded-md hover:bg-gray-100'
 const activeClass = { className: 'bg-gray-100 font-medium' }
 
-export default function Sidebar() {
+// onNavigate: lo usa App para cerrar el menú en móvil al elegir una sección
+export default function Sidebar({ onNavigate }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const user = getCurrentUser()
@@ -21,17 +22,23 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-60 border-r border-gray-200 p-4 flex flex-col gap-4">
+    <aside className="w-60 h-full border-r border-gray-200 p-4 flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <UploadButton />
         <NewFolderButton />
       </div>
 
       <nav className="flex flex-col gap-1">
-        <Link to="/" className={linkClass} activeProps={activeClass} activeOptions={{ exact: true }}>
+        <Link
+          to="/"
+          onClick={onNavigate}
+          className={linkClass}
+          activeProps={activeClass}
+          activeOptions={{ exact: true }}
+        >
           Mis archivos
         </Link>
-        <Link to="/recent" className={linkClass} activeProps={activeClass}>
+        <Link to="/recent" onClick={onNavigate} className={linkClass} activeProps={activeClass}>
           Recientes
         </Link>
         {links.map((link) => (
@@ -39,7 +46,7 @@ export default function Sidebar() {
             {link}
           </a>
         ))}
-        <Link to="/trash" className={linkClass} activeProps={activeClass}>
+        <Link to="/trash" onClick={onNavigate} className={linkClass} activeProps={activeClass}>
           Papelera
         </Link>
       </nav>
