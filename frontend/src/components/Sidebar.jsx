@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import UploadButton from './UploadButton'
 import NewFolderButton from './NewFolderButton'
 import { getCurrentUser, signOut } from '../auth/cognito'
+import SearchBox from './SearchBox'
 
 const links = ['Compartidos'] // Fase 2 (según wireframes oficiales)
 
@@ -27,6 +28,7 @@ export default function Sidebar({ onNavigate }) {
         <UploadButton />
         <NewFolderButton />
       </div>
+            <SearchBox onSearch={onNavigate} />
 
       <nav className="flex flex-col gap-1">
         <Link
