@@ -11,6 +11,7 @@ import LoginPage from './pages/LoginPage'
 import TrashPage from './pages/TrashPage'
 import RecentPage from './pages/RecentPage'
 import { getSession } from './auth/cognito'
+import SearchPage from './pages/SearchPage'
 
 // Raíz: no pinta nada propio, solo la ruta hija
 const rootRoute = createRootRoute({ component: Outlet })
@@ -57,6 +58,17 @@ const recentRoute = createRoute({
   component: RecentPage,
 })
 
+// "/search?q=..." -> resultados de búsqueda
+const searchRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/search',
+  validateSearch: (search) => ({ q: String(search.q ?? '') }),
+  component: function SearchRouteComponent() {
+    const { q } = searchRoute.useSearch()
+    return <SearchPage q={q} />
+  },
+})
+
 // "/trash" -> papelera
 const trashRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -66,7 +78,7 @@ const trashRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
-  appRoute.addChildren([indexRoute, folderRoute, recentRoute, trashRoute]),
+  appRoute.addChildren([indexRoute, folderRoute, recentRoute, searchRoute, trashRoute]),
 ])
 
 export const router = createRouter({ routeTree })

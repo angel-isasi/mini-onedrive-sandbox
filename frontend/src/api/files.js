@@ -143,3 +143,13 @@ export async function purgeItem(id) {
   const res = await apiFetch(`/trash/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error(`Error ${res.status} al borrar definitivamente`);
 }
+
+// ---------- Buscador ----------
+export async function searchItems(q) {
+  const res = await apiFetch(`/search?q=${encodeURIComponent(q)}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Error ${res.status} al buscar`);
+  }
+  return res.json();
+}
