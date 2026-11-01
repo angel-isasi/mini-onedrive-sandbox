@@ -9,6 +9,7 @@ import App from './App'
 import FolderPage from './pages/FolderPage'
 import LoginPage from './pages/LoginPage'
 import TrashPage from './pages/TrashPage'
+import RecentPage from './pages/RecentPage'
 import { getSession } from './auth/cognito'
 
 // Raíz: no pinta nada propio, solo la ruta hija
@@ -49,7 +50,14 @@ const folderRoute = createRoute({
   },
 })
 
-// "/trash" -> papelera (también protegida, dentro del layout)
+// "/recent" -> últimos archivos modificados
+const recentRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/recent',
+  component: RecentPage,
+})
+
+// "/trash" -> papelera
 const trashRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/trash',
@@ -58,7 +66,7 @@ const trashRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
-  appRoute.addChildren([indexRoute, folderRoute, trashRoute]),
+  appRoute.addChildren([indexRoute, folderRoute, recentRoute, trashRoute]),
 ])
 
 export const router = createRouter({ routeTree })

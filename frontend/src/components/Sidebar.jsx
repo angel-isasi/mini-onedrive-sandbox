@@ -4,7 +4,10 @@ import UploadButton from './UploadButton'
 import NewFolderButton from './NewFolderButton'
 import { getCurrentUser, signOut } from '../auth/cognito'
 
-const links = ['Recientes', 'Compartidos'] // pendientes del módulo 10
+const links = ['Compartidos'] // Fase 2 (según wireframes oficiales)
+
+const linkClass = 'px-3 py-2 rounded-md hover:bg-gray-100'
+const activeClass = { className: 'bg-gray-100 font-medium' }
 
 export default function Sidebar() {
   const navigate = useNavigate()
@@ -25,24 +28,18 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex flex-col gap-1">
-        <Link
-          to="/"
-          className="px-3 py-2 rounded-md hover:bg-gray-100"
-          activeProps={{ className: 'bg-gray-100 font-medium' }}
-          activeOptions={{ exact: true }}
-        >
+        <Link to="/" className={linkClass} activeProps={activeClass} activeOptions={{ exact: true }}>
           Mis archivos
+        </Link>
+        <Link to="/recent" className={linkClass} activeProps={activeClass}>
+          Recientes
         </Link>
         {links.map((link) => (
           <a key={link} href="#" className="px-3 py-2 rounded-md text-gray-400 cursor-not-allowed">
             {link}
           </a>
         ))}
-        <Link
-          to="/trash"
-          className="px-3 py-2 rounded-md hover:bg-gray-100"
-          activeProps={{ className: 'bg-gray-100 font-medium' }}
-        >
+        <Link to="/trash" className={linkClass} activeProps={activeClass}>
           Papelera
         </Link>
       </nav>
