@@ -153,3 +153,10 @@ export async function searchItems(q) {
   }
   return res.json();
 }
+
+// ---------- Cuota ----------
+export async function getUsage() {
+  const res = await apiFetch("/usage");
+  if (!res.ok) throw new Error(`Error ${res.status} al cargar el uso`);
+  return res.json(); // { used, trash, quota }
+}
