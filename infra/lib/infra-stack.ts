@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 
 export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -36,5 +37,24 @@ export class InfraStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'FilesBucketName', { value: filesBucket.bucketName });
+
+        // Tabla de metadatos (archivos y carpetas)
+    const table = new dynamodb.TableV2(this, 'FilesTable', {
+      tableName: 'sandbox-cdk-files',
+      partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'itemId', type: dynamodb.AttributeType.STRING },
+      billing: dynamodb.Billing.onDemand(),
+      globalSecondaryIndexes: [
+        {
+          indexName: 'byParent',
+          partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
+          sortKey: { name: 'parentId', type: dynamodb.AttributeType.STRING },
+          projectionType: dynamodb.ProjectionType.ALL,
+        },
+      ],
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    new cdk.CfnOutput(this, 'FilesTableName', { value: table.tableName });
   }
 }
