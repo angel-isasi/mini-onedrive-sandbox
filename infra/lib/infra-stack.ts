@@ -3,6 +3,11 @@ import { Construct } from 'constructs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as path from 'path';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as apigw from 'aws-cdk-lib/aws-apigatewayv2';
+import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
+import { HttpUserPoolAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
 
 export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -83,5 +88,102 @@ export class InfraStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
     new cdk.CfnOutput(this, 'UserPoolClientId', { value: userPoolClient.userPoolClientId });
+
+        // ---------- Lambdas ----------
+    // Helper: crea una Lambda a partir de backend/functions/<name>
+    const fn = (name: string, timeoutSec = 10) =>
+      new lambda.Function(this, name, {
+        functionName: `sandbox-cdk-${name}`,
+        runtime: lambda.Runtime.NODEJS_24_X,
+        architecture: lambda.Architecture.ARM_64,
+        handler: 'index.handler',
+        code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/functions', name)),
+        timeout: cdk.Duration.seconds(timeoutSec),
+        environment: {
+          TABLE_NAME: table.tableName,
+          BUCKET_NAME: filesBucket.bucketName,
+        },
+      });
+
+    const getUploadUrl = fn('get-upload-url');
+    const getFiles = fn('get-files');
+    const getDownloadUrl = fn('get-download-url');
+    const deleteFiles = fn('delete-files');
+    const createFolder = fn('create-folder');
+    const getFolderPath = fn('get-folder-path');
+    const getTrash = fn('get-trash');
+    const restoreItem = fn('restore-item');
+    const purgeItem = fn('purge-item', 30);
+    const updateItem = fn('update-item');
+    const getRecent = fn('get-recent');
+    const search = fn('search');
+    const getUsage = fn('get-usage');
+    const multipart = fn('multipart', 30);
+    const inviteUser = fn('invite-user');
+
+    // ---------- Permisos ----------
+    [getFiles, getDownloadUrl, getFolderPath, getTrash, getRecent, search, getUsage]
+      .forEach((f) => table.grantReadData(f));
+    [getUploadUrl, deleteFiles, createFolder, restoreItem, purgeItem, updateItem, multipart]
+      .forEach((f) => table.grantReadWriteData(f));
+
+    filesBucket.grantPut(getUploadUrl);
+    filesBucket.grantPut(multipart); // incluye AbortMultipartUpload
+    filesBucket.grantRead(getDownloadUrl);
+    filesBucket.grantDelete(purgeItem);
+
+    inviteUser.addEnvironment('USER_POOL_ID', userPool.userPoolId);
+    userPool.grant(inviteUser, 'cognito-idp:AdminCreateUser');
+
+    // ---------- API Gateway (HTTP API + JWT de Cognito) ----------
+    const api = new apigw.HttpApi(this, 'Api', {
+      apiName: 'sandbox-cdk-api',
+      corsPreflight: {
+        allowOrigins: ['http://localhost:5173'],
+        allowMethods: [
+          apigw.CorsHttpMethod.GET,
+          apigw.CorsHttpMethod.POST,
+          apigw.CorsHttpMethod.PATCH,
+          apigw.CorsHttpMethod.DELETE,
+          apigw.CorsHttpMethod.OPTIONS,
+        ],
+        allowHeaders: ['content-type', 'authorization'],
+        maxAge: cdk.Duration.minutes(5),
+      },
+      defaultAuthorizer: new HttpUserPoolAuthorizer('CognitoAuth', userPool, {
+        userPoolClients: [userPoolClient],
+      }),
+    });
+
+    const M = apigw.HttpMethod;
+    const routes: [apigw.HttpMethod, string, lambda.Function][] = [
+      [M.GET, '/files', getFiles],
+      [M.POST, '/files/upload-url', getUploadUrl],
+      [M.GET, '/files/{id}/download', getDownloadUrl],
+      [M.DELETE, '/files/{id}', deleteFiles],
+      [M.PATCH, '/files/{id}', updateItem],
+      [M.POST, '/files/{id}/restore', restoreItem],
+      [M.POST, '/files/multipart/start', multipart],
+      [M.POST, '/files/multipart/complete', multipart],
+      [M.POST, '/files/multipart/abort', multipart],
+      [M.POST, '/folders', createFolder],
+      [M.GET, '/folders/{id}/path', getFolderPath],
+      [M.GET, '/trash', getTrash],
+      [M.DELETE, '/trash/{id}', purgeItem],
+      [M.GET, '/recent', getRecent],
+      [M.GET, '/search', search],
+      [M.GET, '/usage', getUsage],
+      [M.POST, '/users/invite', inviteUser],
+    ];
+
+    routes.forEach(([method, routePath, handler]) => {
+      api.addRoutes({
+        path: routePath,
+        methods: [method],
+        integration: new HttpLambdaIntegration(`${method}${routePath}`, handler),
+      });
+    });
+
+    new cdk.CfnOutput(this, 'ApiUrl', { value: api.apiEndpoint });
   }
 }
