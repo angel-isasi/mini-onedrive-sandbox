@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
 
 export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -56,5 +57,31 @@ export class InfraStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'FilesTableName', { value: table.tableName });
+
+        // Cognito: login solo por invitación
+    const userPool = new cognito.UserPool(this, 'UserPool', {
+      userPoolName: 'sandbox-cdk-users',
+      selfSignUpEnabled: false,
+      signInAliases: { email: true },
+      autoVerify: { email: true },
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    const userPoolClient = userPool.addClient('WebClient', {
+      userPoolClientName: 'sandbox-cdk-web',
+      generateSecret: false,
+      authFlows: { userPassword: true, userSrp: true },
+      idTokenValidity: cdk.Duration.minutes(60),
+      accessTokenValidity: cdk.Duration.minutes(60),
+      refreshTokenValidity: cdk.Duration.days(5),
+    });
+
+    new cognito.CfnUserPoolGroup(this, 'AdminsGroup', {
+      userPoolId: userPool.userPoolId,
+      groupName: 'admins',
+    });
+
+    new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
+    new cdk.CfnOutput(this, 'UserPoolClientId', { value: userPoolClient.userPoolClientId });
   }
 }
