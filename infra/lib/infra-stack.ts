@@ -8,6 +8,9 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigw from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { HttpUserPoolAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 
 export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -89,6 +92,53 @@ export class InfraStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
     new cdk.CfnOutput(this, 'UserPoolClientId', { value: userPoolClient.userPoolClientId });
 
+        // ---------- Frontend: S3 + CloudFront ----------
+    const webBucket = new s3.Bucket(this, 'WebBucket', {
+      bucketName: 'sandbox-cdk-web-angel-2026',
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+    });
+
+    const distribution = new cloudfront.Distribution(this, 'WebDistribution', {
+      comment: 'sandbox-cdk-web',
+      defaultRootObject: 'index.html',
+      defaultBehavior: {
+        origin: origins.S3BucketOrigin.withOriginAccessControl(webBucket), // OAC
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+      },
+      // Fallback SPA: rutas como /folders/123 devuelven index.html
+      errorResponses: [403, 404].map((status) => ({
+        httpStatus: status,
+        responseHttpStatus: 200,
+        responsePagePath: '/index.html',
+        ttl: cdk.Duration.seconds(10),
+      })),
+    });
+
+    const webUrl = `https://${distribution.distributionDomainName}`;
+
+    // CORS del bucket de archivos: permitir también el dominio de CloudFront
+    filesBucket.addCorsRule({
+      allowedOrigins: [webUrl],
+      allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT],
+      allowedHeaders: ['*'],
+      exposedHeaders: ['ETag'],
+      maxAge: 3000,
+    });
+
+    // Sube frontend/dist al bucket e invalida CloudFront en cada deploy
+    new s3deploy.BucketDeployment(this, 'DeployWeb', {
+      sources: [s3deploy.Source.asset(path.join(__dirname, '../../frontend/dist'))],
+      destinationBucket: webBucket,
+      distribution,
+      distributionPaths: ['/*'],
+    });
+
+    new cdk.CfnOutput(this, 'WebUrl', { value: webUrl });
+
         // ---------- Lambdas ----------
     // Helper: crea una Lambda a partir de backend/functions/<name>
     const fn = (name: string, timeoutSec = 10) =>
@@ -139,7 +189,7 @@ export class InfraStack extends cdk.Stack {
     const api = new apigw.HttpApi(this, 'Api', {
       apiName: 'sandbox-cdk-api',
       corsPreflight: {
-        allowOrigins: ['http://localhost:5173'],
+        allowOrigins: ['http://localhost:5173', webUrl],
         allowMethods: [
           apigw.CorsHttpMethod.GET,
           apigw.CorsHttpMethod.POST,
