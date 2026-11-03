@@ -20,8 +20,7 @@ export class GitHubOidcStack extends cdk.Stack {
         StringEquals: { 'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com' },
         StringLike: {
           'token.actions.githubusercontent.com:sub': [
-            'repo:angel-isasi/mini-onedrive-sandbox:ref:refs/heads/main',
-            'repo:Angel-Isasi/mini-onedrive-sandbox:ref:refs/heads/main',
+            'repo:angel-isasi@189562382/mini-onedrive-sandbox@1439585597:ref:refs/heads/main',
           ],
         },
       }),
