@@ -1,0 +1,44 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # botón para correrlo a mano desde GitHub
+
+permissions:
+  id-token: write # necesario para OIDC
+  contents: read
+
+concurrency: deploy-main # evita dos deploys a la vez
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          VITE_API_URL: https://5yq1vj9kkf.execute-api.us-east-1.amazonaws.com
+          VITE_COGNITO_CLIENT_ID: 23a3tukn5hd2rfipm8kip3qlij
+          VITE_COGNITO_REGION: us-east-1
+        run: |
+          npm ci
+          npm run build
+
+      - name: AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::232351199867:role/sandbox-cdk-github-deploy
+          aws-region: us-east-1
+
+      - name: CDK deploy
+        working-directory: infra
+        run: |
+          npm ci
+          npx cdk deploy SandboxStack --require-approval never
